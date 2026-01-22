@@ -11,6 +11,7 @@ import Settings from './pages/Settings';
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import {CookiesProvider} from "react-cookie";
 
 // Protected Layout Wrapper
 const ProtectedLayout: React.FC<{ children: React.ReactNode; onLogout: () => void }> = ({children, onLogout}) => {
@@ -99,6 +100,7 @@ const App: React.FC = () => {
     };
 
     return (
+        <CookiesProvider>
         <HashRouter>
             <Routes>
                 {/* Public Routes */}
@@ -147,6 +149,7 @@ const App: React.FC = () => {
                 )}
             </Routes>
         </HashRouter>
+        </CookiesProvider>
     );
 };
 

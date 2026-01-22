@@ -1,25 +1,9 @@
 import React, {useState} from 'react';
-import {
-    Area,
-    AreaChart,
-    CartesianGrid,
-    Cell,
-    Pie,
-    PieChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis
-} from 'recharts';
 import Modal from '../components/Modal';
-
-const data = [
-    {name: '2025-07', income: 100, expenses: 900},
-    {name: '2025-08', income: 100, expenses: 1500},
-    {name: '2025-09', income: 8000, expenses: 1000},
-    {name: '2025-10', income: 9500, expenses: 800},
-    {name: '2025-11', income: 7800, expenses: 500},
-];
+import {MonthlyTrends} from "@/components/dashboard/MonthlyTrends.tsx";
+import {SpendingChart} from "@/components/dashboard/SpendingChart.tsx";
+import {getApiUrl} from "@/config/api.ts";
+import {useCookies} from "react-cookie";
 
 const pieData = [
     {name: 'Groceries', value: 400},
@@ -28,12 +12,27 @@ const pieData = [
     {name: 'Rent', value: 200},
 ];
 
-// Neon Colors
-const COLORS = ['#6366f1', '#10b981', '#ec4899', '#f59e0b'];
-
 const Dashboard: React.FC = () => {
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
+    const [summary, setSummary] = useState(null);
+    const [cookies] = useCookies(["user"]);
+
+    const getDashboardSummary = async () => {
+        try {
+            const response = await fetch(getApiUrl(`/analytics/summary`), {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${cookies.user}`,
+                },
+            });
+            const data = await response.json();
+            setSummary(data.data);
+        } catch (error) {
+            console.error("Error fetching summary:", error);
+        }
+    }
 
     return (
         <>
@@ -77,7 +76,7 @@ const Dashboard: React.FC = () => {
                             </div>
                         </div>
                         <div className="mt-6 z-10">
-                            <h3 className="text-4xl font-bold font-display text-slate-900 dark:text-white">$64,400.27</h3>
+                            <h3 className="text-4xl font-bold font-display text-slate-900 dark:text-white">{summary?.totalBalance ? `$${summary.totalBalance.toFixed(2)}` : "$0.00"}</h3>
                             <div className="flex items-center gap-2 mt-2">
                                 <span
                                     className="bg-success/20 text-success px-2 py-0.5 rounded-md text-xs font-bold">+2.4%</span>
@@ -124,46 +123,16 @@ const Dashboard: React.FC = () => {
                 <div
                     className="glass-freak rounded-3xl p-6 lg:col-span-1 flex flex-col h-full min-h-[400px] relative overflow-hidden">
                     <h3 className="text-xl font-bold font-display text-slate-800 dark:text-white mb-6 z-10">Categories</h3>
-                    {/* Background glow for chart */}
                     <div
                         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-primary/20 blur-3xl rounded-full"></div>
 
+                    {/* Pie Chart for Categories */}
                     <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-                        <ResponsiveContainer width="100%" height={250}>
-                            <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    innerRadius={65}
-                                    outerRadius={85}
-                                    paddingAngle={6}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]}
-                                              style={{filter: `drop-shadow(0 0 4px ${COLORS[index % COLORS.length]})`}}/>
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: 'rgba(30, 41, 59, 0.8)',
-                                        backdropFilter: 'blur(10px)',
-                                        borderColor: 'rgba(255,255,255,0.1)',
-                                        color: '#fff',
-                                        borderRadius: '12px'
-                                    }}
-                                    itemStyle={{color: '#fff'}}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        <div className="text-center mt-2">
-                            <p className="text-2xl font-bold text-slate-900 dark:text-white">$1,200</p>
-                            <p className="text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">Total
-                                Spent</p>
-                        </div>
+                        <SpendingChart/>
                     </div>
                 </div>
 
+                {/* Trends Chart */}
                 <div className="glass-freak rounded-3xl p-6 lg:col-span-2">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-xl font-bold font-display text-slate-800 dark:text-white">Trends</h3>
@@ -174,41 +143,10 @@ const Dashboard: React.FC = () => {
                         </select>
                     </div>
                     <div className="w-full h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={data}>
-                                <defs>
-                                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                                    </linearGradient>
-                                    <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#ec4899" stopOpacity={0.4}/>
-                                        <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false}
-                                               stroke="rgba(148, 163, 184, 0.2)"/>
-                                <XAxis dataKey="name" tick={{fill: '#94a3b8', fontSize: 12}} axisLine={false}
-                                       tickLine={false} dy={10}/>
-                                <YAxis tick={{fill: '#94a3b8', fontSize: 12}} axisLine={false} tickLine={false}
-                                       tickFormatter={(value) => `$${value}`}/>
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
-                                        backdropFilter: 'blur(8px)',
-                                        borderColor: 'rgba(255,255,255,0.1)',
-                                        borderRadius: '12px',
-                                        boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
-                                    }}
-                                    itemStyle={{color: '#e2e8f0'}}
-                                    cursor={{stroke: 'rgba(255,255,255,0.2)', strokeWidth: 2}}
-                                />
-                                <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fillOpacity={1}
-                                      fill="url(#colorIncome)"/>
-                                <Area type="monotone" dataKey="expenses" stroke="#ec4899" strokeWidth={3}
-                                      fillOpacity={1} fill="url(#colorExpenses)"/>
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        {/* Monthly Trends Component
+                            TODO: Implement Time Range Selection
+                         */}
+                        <MonthlyTrends/>
                     </div>
                 </div>
             </div>
