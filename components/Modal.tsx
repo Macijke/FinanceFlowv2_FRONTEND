@@ -1,4 +1,5 @@
-import React, {useEffect} from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
     isOpen: boolean;
@@ -7,8 +8,11 @@ interface ModalProps {
     children: React.ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({isOpen, onClose, title, children}) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+    const [mounted, setMounted] = useState(false);
+
     useEffect(() => {
+        setMounted(true);
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
         };
@@ -16,19 +20,17 @@ const Modal: React.FC<ModalProps> = ({isOpen, onClose, title, children}) => {
         return () => window.removeEventListener('keydown', handleEsc);
     }, [onClose]);
 
-    if (!isOpen) return null;
+    if (!isOpen || !mounted) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div
-                className="absolute inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm transition-opacity"
+                className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             ></div>
-            <div
-                className="relative w-full max-w-2xl glass-modal rounded-3xl p-6 md:p-8 animate-enter overflow-hidden max-h-[90vh] overflow-y-auto">
+            <div className="relative w-full max-w-2xl glass-modal rounded-3xl p-6 md:p-8 animate-enter overflow-hidden max-h-[90vh] overflow-y-auto shadow-2xl">
                 {/* Top Accent Line */}
-                <div
-                    className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-secondary to-accent"></div>
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-secondary to-accent"></div>
 
                 <div className="flex justify-between items-center mb-6 mt-1">
                     <h2 className="text-3xl font-bold font-display text-slate-900 dark:text-white tracking-tight">{title}</h2>
@@ -44,7 +46,8 @@ const Modal: React.FC<ModalProps> = ({isOpen, onClose, title, children}) => {
                     {children}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

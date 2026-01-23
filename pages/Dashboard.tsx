@@ -92,8 +92,13 @@ const Dashboard: React.FC = () => {
                         <div className="mt-6 z-10">
                             <h3 className="text-4xl font-bold font-display text-slate-900 dark:text-white">{summary?.totalBalance ? `$${summary.totalBalance.toFixed(2)}` : "$0.00"}</h3>
                             <div className="flex items-center gap-2 mt-2">
-                                <span
-                                    className="bg-success/20 text-success px-2 py-0.5 rounded-md text-xs font-bold">+2.4%</span>
+                                {summary?.differenceFromPreviousPeriod >= 0 ? (
+                                    <span
+                                        className="bg-sucess/20 text-sucess px-2 py-0.5 rounded-md text-xs font-bold">{summary.differenceFromPreviousPeriod}%</span>) : (
+                                    <span
+                                        className="bg-red-400/20 text-red-800 px-2 py-0.5 rounded-md text-xs font-bold">{summary.differenceFromPreviousPeriod}%</span>
+                                )}
+
                                 <span className="text-slate-500 dark:text-slate-400 text-xs">vs last month</span>
                             </div>
                         </div>
@@ -113,7 +118,7 @@ const Dashboard: React.FC = () => {
                         </div>
                     </div>
                     <h3 className="text-3xl font-bold font-display text-slate-900 dark:text-white mt-2 group-hover:text-success transition-colors">{summary?.totalIncome ? `$${summary.totalIncome.toFixed(2)}` : "$0.00"}</h3>
-                    <p className="text-sm text-slate-400 mt-1">{summary?.incomeTransactionsCount ? `$${summary.incomeTransactionsCount}` : "0"} Transactions</p>
+                    <p className="text-sm text-slate-400 mt-1">{summary?.incomeTransactionsCount ? `${summary.incomeTransactionsCount}` : "0"} Transactions</p>
                 </div>
 
                 <div
@@ -129,7 +134,7 @@ const Dashboard: React.FC = () => {
                         </div>
                     </div>
                     <h3 className="text-3xl font-bold font-display text-slate-900 dark:text-white mt-2 group-hover:text-secondary transition-colors">{summary?.totalExpenses ? `$${summary.totalExpenses.toFixed(2)}` : "$0.00"}</h3>
-                    <p className="text-sm text-slate-400 mt-1">{summary?.expansiveTransactionsCount ? `$${summary.expansiveTransactionsCount}` : "0"} Transactions</p>
+                    <p className="text-sm text-slate-400 mt-1">{summary?.expansiveTransactionsCount ? `${summary.expansiveTransactionsCount}` : "0"} Transactions</p>
                 </div>
             </div>
 
