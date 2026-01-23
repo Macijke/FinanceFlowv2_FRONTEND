@@ -9,13 +9,13 @@ interface MonthlyTrend {
     expenses: number;
 }
 
-export function MonthlyTrends() {
+export function MonthlyTrends({dateRange}) {
 
     const [cookies] = useCookies(["user"]);
     const [monthlyTrends, setmonthlyTrends] = useState<MonthlyTrend[]>([]);
 
     const getMonthlyTrends = async () => {
-        const response = await fetch(getApiUrl(`/analytics/monthly-trends?startDate=2025-01-01&endDate=2026-01-01`), {
+        const response = await fetch(getApiUrl(`/analytics/monthly-trends?startDate=${getDateRange().startDate}&endDate=${getDateRange().endDate}`), {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -27,9 +27,35 @@ export function MonthlyTrends() {
         setmonthlyTrends(chartData);
     }
 
+    const formatDateToYYYYMMDD = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const getDateRange = () => {
+        const today = new Date();
+        const monthsToSubtract = dateRange === '6months' ? 6 : 12;
+
+        const startDate = new Date(
+            today.getFullYear(),
+            today.getMonth() - monthsToSubtract,
+            1
+        );
+
+        const endDate = new Date();
+
+        return {
+            startDate: formatDateToYYYYMMDD(startDate),
+            endDate: formatDateToYYYYMMDD(endDate)
+        };
+    };
+
     useEffect(() => {
+        getDateRange();
         getMonthlyTrends();
-    }, [cookies.user]);
+    }, [cookies.user, dateRange]);
 
     return (
         <>

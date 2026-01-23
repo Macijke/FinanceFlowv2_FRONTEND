@@ -1,22 +1,19 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Modal from '../components/Modal';
 import {MonthlyTrends} from "@/components/dashboard/MonthlyTrends.tsx";
 import {SpendingChart} from "@/components/dashboard/SpendingChart.tsx";
 import {getApiUrl} from "@/config/api.ts";
 import {useCookies} from "react-cookie";
-
-const pieData = [
-    {name: 'Groceries', value: 400},
-    {name: 'Entertainment', value: 300},
-    {name: 'Utilities', value: 300},
-    {name: 'Rent', value: 200},
-];
+import {RecentTransactions} from "@/components/dashboard/RecentTransactions.tsx";
 
 const Dashboard: React.FC = () => {
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense');
+    const [loading, setLoading] = useState(true);
+    const [userProfile, setUserProfile] = useState(null);
     const [summary, setSummary] = useState(null);
     const [cookies] = useCookies(["user"]);
+    const [dateRange, setDateRange] = useState<string>('6months');
 
     const getDashboardSummary = async () => {
         try {
@@ -33,6 +30,37 @@ const Dashboard: React.FC = () => {
             console.error("Error fetching summary:", error);
         }
     }
+
+    const getUserProfile = async () => {
+        try {
+            const response = await fetch(getApiUrl(`/users/profile`), {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${cookies.user}`,
+                },
+            });
+            const data = await response.json();
+            setUserProfile(data.data);
+        } catch (error) {
+            console.error("Error fetching profile:", error);
+        }
+    }
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            await Promise.all([
+                getDashboardSummary(),
+                getUserProfile()
+            ]);
+            setLoading(false);
+        };
+
+        if (cookies.user) {
+            fetchData();
+        }
+    }, [cookies.user]);
 
     return (
         <>
@@ -71,7 +99,7 @@ const Dashboard: React.FC = () => {
                         <div className="flex justify-between items-start z-10">
                             <span
                                 className="text-slate-500 dark:text-slate-300 font-display text-sm tracking-wider uppercase">Total Balance</span>
-                            <div className="p-2 rounded-lg bg-slate-100 dark:bg-white/10 backdrop-blur-md">
+                            <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10 backdrop-blur-md">
                                 <span className="material-icons-round text-primary dark:text-white">wallet</span>
                             </div>
                         </div>
@@ -91,15 +119,15 @@ const Dashboard: React.FC = () => {
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
                             <div
-                                className="p-2.5 rounded-xl bg-success/10 text-success shadow-[0_0_10px_rgba(16,185,129,0.3)]">
-                                <span className="material-icons-round">trending_up</span>
+                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-success/10 text-success shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+                                <span className="material-icons-round text-2xl">trending_up</span>
                             </div>
                             <span
                                 className="text-slate-500 dark:text-slate-300 font-display text-sm uppercase tracking-wide">Income</span>
                         </div>
                     </div>
-                    <h3 className="text-3xl font-bold font-display text-slate-900 dark:text-white mt-2 group-hover:text-success transition-colors">$8,250.00</h3>
-                    <p className="text-sm text-slate-400 mt-1">12 Transactions</p>
+                    <h3 className="text-3xl font-bold font-display text-slate-900 dark:text-white mt-2 group-hover:text-success transition-colors">{summary?.totalIncome ? `$${summary.totalIncome.toFixed(2)}` : "$0.00"}</h3>
+                    <p className="text-sm text-slate-400 mt-1">{summary?.incomeTransactionsCount ? `$${summary.incomeTransactionsCount}` : "0"} Transactions</p>
                 </div>
 
                 <div
@@ -107,15 +135,15 @@ const Dashboard: React.FC = () => {
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
                             <div
-                                className="p-2.5 rounded-xl bg-secondary/10 text-secondary shadow-[0_0_10px_rgba(236,72,153,0.3)]">
-                                <span className="material-icons-round">trending_down</span>
+                                className="w-12 h-12 flex items-center justify-center rounded-2xl bg-secondary/10 text-secondary shadow-[0_0_10px_rgba(236,72,153,0.3)]">
+                                <span className="material-icons-round text-2xl">trending_down</span>
                             </div>
                             <span
                                 className="text-slate-500 dark:text-slate-300 font-display text-sm uppercase tracking-wide">Spent</span>
                         </div>
                     </div>
-                    <h3 className="text-3xl font-bold font-display text-slate-900 dark:text-white mt-2 group-hover:text-secondary transition-colors">$3,420.50</h3>
-                    <p className="text-sm text-slate-400 mt-1">45 Transactions</p>
+                    <h3 className="text-3xl font-bold font-display text-slate-900 dark:text-white mt-2 group-hover:text-secondary transition-colors">{summary?.totalExpenses ? `$${summary.totalExpenses.toFixed(2)}` : "$0.00"}</h3>
+                    <p className="text-sm text-slate-400 mt-1">{summary?.expansiveTransactionsCount ? `$${summary.expansiveTransactionsCount}` : "0"} Transactions</p>
                 </div>
             </div>
 
@@ -137,16 +165,15 @@ const Dashboard: React.FC = () => {
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-xl font-bold font-display text-slate-800 dark:text-white">Trends</h3>
                         <select
+                            value={dateRange}
+                            onChange={(e) => setDateRange(e.target.value)}
                             className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs rounded-lg px-3 py-1.5 text-slate-500 dark:text-slate-400 focus:ring-0 cursor-pointer outline-none hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
-                            <option>Last 6 Months</option>
-                            <option>Last Year</option>
+                            <option value="6months">Last 6 Months</option>
+                            <option value="year">Last Year</option>
                         </select>
                     </div>
                     <div className="w-full h-[300px]">
-                        {/* Monthly Trends Component
-                            TODO: Implement Time Range Selection
-                         */}
-                        <MonthlyTrends/>
+                        <MonthlyTrends dateRange={dateRange}/>
                     </div>
                 </div>
             </div>
@@ -160,68 +187,8 @@ const Dashboard: React.FC = () => {
                         View All <span className="material-icons-round text-sm">arrow_forward</span>
                     </a>
                 </div>
-                <div className="divide-y divide-slate-200 dark:divide-white/5">
-                    {[
-                        {
-                            name: 'Cyberpunk Game',
-                            type: 'Entertainment',
-                            date: 'Just now',
-                            amount: '-$59.99',
-                            icon: 'sports_esports',
-                            color: 'purple',
-                            isIncome: false
-                        },
-                        {
-                            name: 'Freelance Gig',
-                            type: 'Work',
-                            date: '2h ago',
-                            amount: '+$1,200.00',
-                            icon: 'work',
-                            color: 'blue',
-                            isIncome: true
-                        },
-                        {
-                            name: 'Grocery Run',
-                            type: 'Food',
-                            date: '5h ago',
-                            amount: '-$142.50',
-                            icon: 'shopping_cart',
-                            color: 'pink',
-                            isIncome: false
-                        },
-                    ].map((tx, i) => (
-                        <div key={i}
-                             className="p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors gap-4 group cursor-pointer">
-                            <div className="flex items-center gap-4">
-                                <div
-                                    className={`w-12 h-12 rounded-2xl bg-gradient-to-br from-${tx.color}-500/20 to-${tx.color}-600/10 text-${tx.color}-500 dark:text-${tx.color}-400 flex items-center justify-center flex-shrink-0 border border-slate-200 dark:border-white/5 group-hover:scale-110 transition-transform duration-300`}>
-                                    <span className="material-icons-round">{tx.icon}</span>
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">{tx.name}</h4>
-                                    <div
-                                        className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
-                                        <span
-                                            className="bg-slate-200 dark:bg-white/5 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide">{tx.type}</span>
-                                        <span>•</span>
-                                        <span>{tx.date}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 self-start sm:self-center">
-                <span
-                    className={`text-lg font-bold font-display ${tx.isIncome ? 'text-success drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'text-slate-400 dark:text-slate-300'}`}>
-                  {tx.amount}
-                </span>
-                                <div
-                                    className={`p-1.5 rounded-full ${tx.isIncome ? 'bg-success/10 text-success' : 'bg-slate-200 dark:bg-white/5 text-slate-400'}`}>
-                                    <span
-                                        className="material-icons-round text-sm">{tx.isIncome ? 'north_east' : 'south_west'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+
+                <RecentTransactions/>
             </div>
 
             {/* Add Transaction Modal */}
