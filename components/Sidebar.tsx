@@ -1,5 +1,8 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
+import {getApiUrl} from "@/config/api.ts";
+import {useCookies} from "react-cookie";
+import Avatar from "react-avatar";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -9,6 +12,9 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({isOpen, setIsOpen, currentPath, onLogout}) => {
+    const [cookies, setCookie, removeCookie] = useCookies(['user']);
+    const [userProfile, setUserProfile] = useState(null);
+
     const navItems = [
         {name: 'Dashboard', icon: 'dashboard', path: '/'},
         {name: 'Transactions', icon: 'receipt_long', path: '/transactions'},
@@ -17,6 +23,26 @@ const Sidebar: React.FC<SidebarProps> = ({isOpen, setIsOpen, currentPath, onLogo
         {name: 'Savings', icon: 'savings', path: '/savings'},
         {name: 'Settings', icon: 'settings', path: '/settings'},
     ];
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await fetch(getApiUrl(`/users/profile`), {
+                    headers: {
+                        'Authorization': `Bearer ${cookies.user}`,
+                    },
+                });
+                const data = await response.json();
+                setUserProfile(data.data);
+            } catch (err) {
+                console.error('Error fetching profile:', err);
+            }
+        };
+
+        if (cookies.user) {
+            fetchProfile();
+        }
+    }, [cookies.user]);
 
     const isActive = (path: string) => currentPath === path;
 
@@ -88,13 +114,18 @@ const Sidebar: React.FC<SidebarProps> = ({isOpen, setIsOpen, currentPath, onLogo
                                 className="w-10 h-10 rounded-full bg-gradient-to-tr from-secondary to-orange-400 p-[2px] shadow-glow-pink">
                                 <div
                                     className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
-                                    <span className="text-sm font-bold text-white">JK</span>
+                                    <span className="text-sm font-bold text-white">
+                                        <Avatar>
+                                            src={userProfile?.profilePictureUrl}
+                                            alt={`${userProfile?.firstName} ${userProfile?.lastName}`}
+                                        </Avatar>
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-sm font-bold text-slate-900 dark:text-white font-display">Jan Kowalski</span>
+                                <span className="text-sm font-bold text-slate-900 dark:text-white font-display">{userProfile?.firstName} {userProfile?.lastName}</span>
                                 <span
-                                    className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pro Member</span>
+                                    className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">{userProfile?.role}</span>
                             </div>
                         </div>
 
