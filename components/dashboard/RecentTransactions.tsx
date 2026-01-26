@@ -47,7 +47,7 @@ export function RecentTransactions() {
                         <div className="flex items-center gap-3 self-start sm:self-center">
                             <span
                                 className={`text-lg font-bold font-display ${tx.type === 'INCOME' ? 'text-success drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'text-secondary transition-colors drop-shadow-[0_0_8px_rgba(236,72,153,0.4)]'}`}>
-                                {tx.amount}
+                                ${tx.amount.toFixed(2)}
                             </span>
 
                             <div

@@ -94,9 +94,9 @@ const Dashboard: React.FC = () => {
                             <div className="flex items-center gap-2 mt-2">
                                 {summary?.differenceFromPreviousPeriod >= 0 ? (
                                     <span
-                                        className="bg-sucess/20 text-sucess px-2 py-0.5 rounded-md text-xs font-bold">{summary.differenceFromPreviousPeriod}%</span>) : (
+                                        className="bg-sucess/20 text-sucess px-2 py-0.5 rounded-md text-xs font-bold">{summary?.differenceFromPreviousPeriod}%</span>) : (
                                     <span
-                                        className="bg-red-400/20 text-red-800 px-2 py-0.5 rounded-md text-xs font-bold">{summary.differenceFromPreviousPeriod}%</span>
+                                        className="bg-red-400/20 text-red-800 px-2 py-0.5 rounded-md text-xs font-bold">{summary?.differenceFromPreviousPeriod}%</span>
                                 )}
 
                                 <span className="text-slate-500 dark:text-slate-400 text-xs">vs last month</span>
