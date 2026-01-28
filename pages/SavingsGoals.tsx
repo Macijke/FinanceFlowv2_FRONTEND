@@ -1,24 +1,114 @@
-import React, {useState} from 'react';
-import Modal from '../components/menu/Modal.tsx';
+import React, {useEffect, useState} from 'react';
+import {useCookies} from "react-cookie";
+import {getApiUrl} from "@/config/api.ts";
+import NewSavingGoalsDialog from "@/components/savingsgoal/NewSavingGoalsDialog.tsx";
+import ContributeSavingsGoalDialog from "@/components/savingsgoal/ContributeSavingsGoalDialog.tsx";
 
 const SavingsGoals: React.FC = () => {
-    const [isNewGoalOpen, setIsNewGoalOpen] = useState(false);
     const [isContributionOpen, setIsContributionOpen] = useState(false);
+    const [isNewGoalOpen, setIsNewGoalOpen] = useState(false);
+    const [goals, setGoals] = useState([]);
+    const [cookies] = useCookies(['user']);
+    const [editingGoal, setEditingGoal] = useState<any>(null);
+    const [contributingGoal, setContributingGoal] = useState<{ id: number, name: string } | null>(null);
 
-    // State for forms
-    const [selectedColor, setSelectedColor] = useState('#3b82f6'); // Default blue
-    const [selectedEmoji, setSelectedEmoji] = useState('✈️'); // Default emoji
+    const getTimeRemaining = (deadline: string) => {
+        const total = Date.parse(deadline) - Date.parse(new Date().toString());
+        const days = Math.floor(total / (1000 * 60 * 60 * 24));
+        const months = Math.floor(days / 30);
+        const years = Math.floor(months / 12);
 
-    // Preset colors for quick selection
-    const presetColors = [
-        '#3b82f6', // blue
-        '#a855f7', // purple
-        '#ec4899', // pink
-        '#f97316', // orange
-        '#10b981', // green
-        '#14b8a6', // teal
-        '#ef4444', // red
-    ];
+        if (days < 0) return {text: 'Overdue', color: 'text-red-500', icon: 'error'};
+        if (days === 0) return {text: 'Due today', color: 'text-orange-500', icon: 'warning'};
+        if (years > 0) return {
+            text: `${years} year${years > 1 ? 's' : ''} left`,
+            color: 'text-slate-500 dark:text-slate-400',
+            icon: 'schedule'
+        };
+        if (months > 0) return {
+            text: `${months} month${months > 1 ? 's' : ''} left`,
+            color: 'text-slate-500 dark:text-slate-400',
+            icon: 'schedule'
+        };
+        return {text: `${days} day${days > 1 ? 's' : ''} left`, color: 'text-orange-500', icon: 'schedule'};
+    };
+
+
+    const fetchSavingsGoals = async () => {
+        try {
+            const response = await fetch(getApiUrl(`/savings-goals`), {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${cookies.user}`,
+                },
+            });
+
+            const data = await response.json();
+            const gls = data.data || [];
+            setGoals(gls);
+            return data;
+        } catch (err) {
+            console.error('Error:', err);
+        } finally {
+            //setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchSavingsGoals();
+    }, [cookies.user]);
+
+    const onGoalAdded = () => {
+        fetchSavingsGoals();
+        setEditingGoal(null);
+    }
+
+    const onContribution = () => {
+        fetchSavingsGoals();
+        setContributingGoal(null);
+    }
+
+    const handleEditGoal = (goal: any) => {
+        setEditingGoal(goal);
+        setIsNewGoalOpen(true);
+    };
+
+    const handleDeleteGoal = async (goalId: number) => {
+        if (!confirm("Are you sure you want to delete this goal?")) return;
+
+        try {
+            const response = await fetch(getApiUrl(`/savings-goals/${goalId}`), {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${cookies.user}`,
+                },
+            });
+
+            if (response.ok) {
+                fetchSavingsGoals();
+            }
+        } catch (err) {
+            console.error('Error deleting goal:', err);
+        }
+    };
+
+    const handleContributeClick = (goal: any) => {
+        setContributingGoal({
+            id: goal.id,
+            name: goal.name
+        });
+        setIsContributionOpen(true);
+    };
+
+    const handleCloseNewGoal = () => {
+        setIsNewGoalOpen(false);
+        setEditingGoal(null);
+    };
+
+    const handleCloseContribution = () => {
+        setIsContributionOpen(false);
+        setContributingGoal(null);
+    };
 
     return (
         <>
@@ -39,124 +129,92 @@ const SavingsGoals: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
 
-                {/* Goal Card 1 */}
-                <div
-                    className="glass-freak p-6 rounded-3xl flex flex-col group hover:border-white/20 transition-all duration-300 relative overflow-hidden">
-                    <div
-                        className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-orange-500/20 transition-colors"></div>
-
-                    <div className="flex justify-between items-start mb-6 z-10">
-                        <div className="flex items-center gap-4">
-                            <div
-                                className="w-16 h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center text-3xl shadow-inner border border-white/5">
-                                🏖️
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold font-display text-slate-900 dark:text-white group-hover:text-orange-400 transition-colors">Vacation</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Greece 2026</p>
-                            </div>
-                        </div>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                                className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                                <span className="material-icons text-sm">edit</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div className="mb-8 z-10">
-                        <div className="flex justify-between text-sm font-bold font-display mb-2">
-                            <span className="text-orange-400">31%</span>
-                            <span className="text-slate-500 dark:text-slate-400">$5,500 left</span>
-                        </div>
+                {goals.map((goal: any, idx) => {
+                    const timeLeft = getTimeRemaining(goal.targetDate);
+                    return (<div
+                        key={idx}
+                        className="glass-freak p-6 rounded-3xl flex flex-col group hover:border-white/20 transition-all duration-300 relative overflow-hidden">
                         <div
-                            className="h-4 w-full bg-slate-900/50 rounded-full overflow-hidden border border-white/5 p-0.5">
-                            <div
-                                className="h-full bg-gradient-to-r from-orange-500 to-red-500 w-[31%] rounded-full shadow-[0_0_10px_rgba(249,115,22,0.5)] relative">
-                                <div className="absolute inset-0 bg-white/20 animate-[pulse_2s_infinite]"></div>
+                            className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-orange-500/20 transition-colors"></div>
+
+                        <div className="flex justify-between items-start mb-6 z-10">
+                            <div className="flex items-center gap-4">
+                                <div
+                                    className="w-16 h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center text-3xl shadow-inner border border-white/5">&nbsp;&nbsp;{goal.icon}&nbsp;&nbsp;</div>
+                                <div>
+                                    <h3 className="text-xl font-bold font-display text-slate-900 dark:text-white group-hover:text-orange-400 transition-colors">{goal.name}</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{goal.description}</p>
+                                    <div
+                                        className="flex items-center gap-1 mt-1 text-xs text-slate-400 dark:text-slate-500">
+                                        <span className="material-icons-round text-[12px]">event</span>
+                                        <span>Due {goal.targetDate}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                    onClick={() => handleEditGoal(goal)}
+                                    className="w-10 h-10 p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                                    <span className="material-icons text-sm">edit</span>
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteGoal(goal.id)}
+                                    className="w-10 h-10 p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                                    <span className="material-icons text-sm">delete</span>
+                                </button>
                             </div>
                         </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mb-8 z-10">
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Target</p>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white font-display">$8,000</p>
+
+                        <div className="mb-8 z-10">
+                            <div className="flex justify-between text-sm font-bold font-display mb-2">
+                                <span className="text-orange-400">{goal.percentageCompleted}%</span>
+                                <span className="text-slate-500 dark:text-slate-400">${goal.remainingAmount} left</span>
+                            </div>
+                            <div
+                                className="h-4 w-full bg-slate-900/50 rounded-full overflow-hidden border border-white/5 p-0.5">
+                                <div
+                                    className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.5)] relative transition-all duration-500"
+                                    style={{width: `${goal.percentageCompleted}%`}}>
+                                    <div className="absolute inset-0 bg-white/20 animate-[pulse_2s_infinite]"></div>
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-center mt-3">
+                                <div
+                                    className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 font-medium bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md">
+                                    <span className="material-icons-round text-[12px]">flag</span>
+                                    <span>Target: {goal.targetDate}</span>
+                                </div>
+
+                                <div className={`text-xs font-bold flex items-center gap-1.5 ${timeLeft.color}`}>
+                                    <span className="material-icons-round text-[14px]">{timeLeft.icon}</span>
+                                    {timeLeft.text}
+                                </div>
+                            </div>
                         </div>
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Current</p>
-                            <p className="text-xl font-bold text-orange-400 font-display">$2,500</p>
+                        <div className="grid grid-cols-2 gap-4 mb-8 z-10">
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Target</p>
+                                <p className="text-xl font-bold text-slate-900 dark:text-white font-display">${goal.targetAmount}</p>
+                            </div>
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Current</p>
+                                <p className="text-xl font-bold text-orange-400 font-display">${goal.currentAmount}</p>
+                            </div>
+
                         </div>
-                    </div>
-                    <div className="mt-auto z-10">
-                        <button
-                            onClick={() => setIsContributionOpen(true)}
-                            className="w-full py-3 rounded-xl border border-white/10 font-bold text-slate-300 hover:bg-orange-500 hover:text-white hover:border-transparent transition-all flex justify-center items-center gap-2 group/btn"
-                        >
+                        <div className="mt-auto z-10">
+                            <button
+                                onClick={() => handleContributeClick(goal)}
+                                className="w-full py-3 rounded-xl border border-white/10 font-bold text-slate-300 hover:bg-orange-500 hover:text-white hover:border-transparent transition-all flex justify-center items-center gap-2 group/btn"
+                            >
                             <span
                                 className="material-icons text-sm group-hover/btn:rotate-90 transition-transform">add</span>
-                            Add Contribution
-                        </button>
-                    </div>
-                </div>
-
-                {/* Goal Card 2 */}
-                <div
-                    className="glass-freak p-6 rounded-3xl flex flex-col group hover:border-white/20 transition-all duration-300 relative overflow-hidden">
-                    <div
-                        className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/20 transition-colors"></div>
-
-                    <div className="flex justify-between items-start mb-6 z-10">
-                        <div className="flex items-center gap-4">
-                            <div
-                                className="w-16 h-16 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-3xl shadow-inner border border-white/5">
-                                💻
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold font-display text-slate-900 dark:text-white group-hover:text-cyan-400 transition-colors">Tech
-                                    Upgrade</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">M4 Macbook Pro</p>
-                            </div>
-                        </div>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                                className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                                <span className="material-icons text-sm">edit</span>
+                                Add Contribution
                             </button>
                         </div>
-                    </div>
-                    <div className="mb-8 z-10">
-                        <div className="flex justify-between text-sm font-bold font-display mb-2">
-                            <span className="text-cyan-400">24%</span>
-                            <span className="text-slate-500 dark:text-slate-400">$3,800 left</span>
-                        </div>
-                        <div
-                            className="h-4 w-full bg-slate-900/50 rounded-full overflow-hidden border border-white/5 p-0.5">
-                            <div
-                                className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 w-[24%] rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)] relative">
-                                <div className="absolute inset-0 bg-white/20 animate-[pulse_3s_infinite]"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mb-8 z-10">
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Target</p>
-                            <p className="text-xl font-bold text-slate-900 dark:text-white font-display">$5,000</p>
-                        </div>
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Current</p>
-                            <p className="text-xl font-bold text-cyan-400 font-display">$1,200</p>
-                        </div>
-                    </div>
-                    <div className="mt-auto z-10">
-                        <button
-                            onClick={() => setIsContributionOpen(true)}
-                            className="w-full py-3 rounded-xl border border-white/10 font-bold text-slate-300 hover:bg-cyan-500 hover:text-white hover:border-transparent transition-all flex justify-center items-center gap-2 group/btn"
-                        >
-                            <span
-                                className="material-icons text-sm group-hover/btn:rotate-90 transition-transform">add</span>
-                            Add Contribution
-                        </button>
-                    </div>
-                </div>
+                    </div>);
+                })}
 
                 {/* Create New Goal Card */}
                 <div
@@ -175,173 +233,21 @@ const SavingsGoals: React.FC = () => {
             </div>
 
             {/* New Dream Modal */}
-            <Modal
+            <NewSavingGoalsDialog
                 isOpen={isNewGoalOpen}
-                onClose={() => setIsNewGoalOpen(false)}
-                title="Manifest a New Dream"
-            >
-                <div className="space-y-6">
-                    <div className="flex gap-6">
-                        {/* Emoji Picker Input */}
-                        <div className="flex-shrink-0">
-                            <label
-                                className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Icon</label>
-                            <div
-                                className="relative w-20 h-20 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-4xl shadow-sm overflow-hidden group">
-                                <span
-                                    className="pointer-events-none group-focus-within:opacity-50 transition-opacity">{selectedEmoji}</span>
-                                <input
-                                    type="text"
-                                    value={selectedEmoji}
-                                    onChange={(e) => setSelectedEmoji(e.target.value)}
-                                    maxLength={2}
-                                    className="absolute inset-0 w-full h-full text-center opacity-0 cursor-pointer focus:opacity-100 bg-transparent outline-none text-slate-900 dark:text-white text-4xl caret-primary"
-                                />
-                                <div className="absolute bottom-1 right-1 pointer-events-none">
-                                    <span className="material-icons text-[10px] text-slate-400">edit</span>
-                                </div>
-                            </div>
-                            <p className="text-[10px] text-slate-400 mt-1.5 text-center">Win + .</p>
-                        </div>
-
-                        <div className="flex-1 space-y-4">
-                            <div>
-                                <label
-                                    className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Goal
-                                    Name</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g., Tesla Model 3"
-                                    className="w-full px-4 py-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-slate-900 dark:text-white placeholder-slate-400 shadow-sm"
-                                />
-                            </div>
-                            <div>
-                                <label
-                                    className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Target
-                                    Amount</label>
-                                <div className="relative">
-                                    <span
-                                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-                                    <input
-                                        type="number"
-                                        placeholder="0.00"
-                                        className="w-full pl-8 pr-4 py-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-slate-900 dark:text-white placeholder-slate-400 font-display text-lg font-bold shadow-sm"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label
-                            className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Description</label>
-                        <input
-                            type="text"
-                            placeholder="Why do you want this?"
-                            className="w-full px-4 py-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-slate-900 dark:text-white placeholder-slate-400 shadow-sm"
-                        />
-                    </div>
-
-                    <div>
-                        <label
-                            className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Deadline</label>
-                        <input
-                            type="date"
-                            className="w-full px-4 py-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-slate-900 dark:text-white shadow-sm"
-                        />
-                    </div>
-
-                    {/* Custom Color Picker */}
-                    <div>
-                        <label
-                            className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Theme
-                            Color</label>
-                        <div className="flex flex-wrap gap-3 items-center">
-                            {presetColors.map((color) => (
-                                <div
-                                    key={color}
-                                    onClick={() => setSelectedColor(color)}
-                                    className={`w-10 h-10 rounded-full cursor-pointer transition-all transform hover:scale-110 shadow-sm ${selectedColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110' : ''}`}
-                                    style={{backgroundColor: color}}
-                                ></div>
-                            ))}
-
-                            {/* Native HEX Input */}
-                            <div className="relative group">
-                                <div
-                                    className={`w-10 h-10 rounded-full cursor-pointer transition-all transform hover:scale-110 bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-500 flex items-center justify-center ${!presetColors.includes(selectedColor) ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110' : ''}`}
-                                >
-                                    <span className="material-icons text-white text-sm drop-shadow-md">colorize</span>
-                                </div>
-                                <input
-                                    type="color"
-                                    value={selectedColor}
-                                    onChange={(e) => setSelectedColor(e.target.value)}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="pt-2">
-                        <button
-                            className="w-full py-4 rounded-xl text-white font-bold shadow-neon hover:shadow-glow transition-all transform hover:scale-[1.02] tracking-wide text-lg"
-                            style={{background: selectedColor, boxShadow: `0 0 20px -5px ${selectedColor}80`}}
-                        >
-                            Launch Goal
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                onClose={handleCloseNewGoal}
+                onGoalAdded={onGoalAdded}
+                editGoal={editingGoal}
+            />
 
             {/* Add Contribution Modal */}
-            <Modal
+            <ContributeSavingsGoalDialog
                 isOpen={isContributionOpen}
-                onClose={() => setIsContributionOpen(false)}
-                title="Add Contribution"
-            >
-                <div className="space-y-6">
-                    <div className="text-center py-2">
-                        <p className="text-slate-500 dark:text-slate-400 mb-2">You are getting closer!</p>
-                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Vacation Fund</h3>
-                    </div>
+                onClose={handleCloseContribution}
+                onContribution={onContribution}
+                goalInfo={contributingGoal}
+            />
 
-                    <div>
-                        <label
-                            className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Deposit
-                            Amount</label>
-                        <div className="relative">
-                            <span
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-success font-bold text-xl">$</span>
-                            <input
-                                type="number"
-                                placeholder="0.00"
-                                className="w-full pl-8 pr-4 py-5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-success focus:border-transparent outline-none transition-all text-slate-900 dark:text-white placeholder-slate-400 font-display text-3xl font-bold shadow-sm text-center"
-                                autoFocus
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label
-                            className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Note
-                            (Optional)</label>
-                        <input
-                            type="text"
-                            placeholder="Monthly savings..."
-                            className="w-full px-4 py-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-success focus:border-transparent outline-none transition-all text-slate-900 dark:text-white placeholder-slate-400 shadow-sm"
-                        />
-                    </div>
-
-                    <div className="pt-2">
-                        <button
-                            className="w-full py-4 rounded-xl bg-gradient-to-r from-success to-emerald-600 text-white font-bold shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:shadow-[0_0_25px_rgba(16,185,129,0.6)] transition-all transform hover:scale-[1.02] tracking-wide text-lg flex items-center justify-center gap-2">
-                            <span className="material-icons-round">payments</span>
-                            Deposit Funds
-                        </button>
-                    </div>
-                </div>
-            </Modal>
         </>
     );
 };
