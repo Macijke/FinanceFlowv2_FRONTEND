@@ -1,19 +1,22 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {Link} from 'react-router-dom';
-import {getApiUrl} from "@/config/api.ts";
-import {useCookies} from "react-cookie";
 import Avatar from "react-avatar";
+import {useUser} from "@/context/UserContext.tsx";
 
 interface SidebarProps {
     isOpen: boolean;
     setIsOpen: (isOpen: boolean) => void;
     currentPath: string;
-    onLogout: () => void;
+    onLogout?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({isOpen, setIsOpen, currentPath, onLogout}) => {
-    const [cookies, setCookie, removeCookie] = useCookies(['user']);
-    const [userProfile, setUserProfile] = useState(null);
+    const {userProfile, logout: contextLogout} = useUser();
+
+    const handleLogout = () => {
+        if (onLogout) onLogout();
+        else contextLogout();
+    };
 
     const navItems = [
         {name: 'Dashboard', icon: 'dashboard', path: '/'},
@@ -23,26 +26,6 @@ const Sidebar: React.FC<SidebarProps> = ({isOpen, setIsOpen, currentPath, onLogo
         {name: 'Savings', icon: 'savings', path: '/savings'},
         {name: 'Settings', icon: 'settings', path: '/settings'},
     ];
-
-    useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const response = await fetch(getApiUrl(`/users/profile`), {
-                    headers: {
-                        'Authorization': `Bearer ${cookies.user}`,
-                    },
-                });
-                const data = await response.json();
-                setUserProfile(data.data);
-            } catch (err) {
-                console.error('Error fetching profile:', err);
-            }
-        };
-
-        if (cookies.user) {
-            fetchProfile();
-        }
-    }, [cookies.user]);
 
     const isActive = (path: string) => currentPath === path;
 
@@ -86,7 +69,6 @@ const Sidebar: React.FC<SidebarProps> = ({isOpen, setIsOpen, currentPath, onLogo
                                 : 'text-slate-600 dark:text-slate-400 hover:bg-white/10 dark:hover:bg-white/5 hover:text-primary dark:hover:text-white hover:translate-x-1'}
               `}
                         >
-                            {/* Active Background Gradient */}
                             {isActive(item.path) && (
                                 <div
                                     className="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-90 rounded-2xl -z-10"></div>
@@ -107,36 +89,44 @@ const Sidebar: React.FC<SidebarProps> = ({isOpen, setIsOpen, currentPath, onLogo
                 </nav>
 
                 <div className="p-4 relative z-10">
-                    <div
-                        className="glass-freak rounded-2xl p-4 mb-4 border border-white/5 bg-gradient-to-br from-white/5 to-transparent">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div
-                                className="w-10 h-10 rounded-full bg-gradient-to-tr from-secondary to-orange-400 p-[2px] shadow-glow-pink">
+                    {userProfile && (
+                        <div
+                            className="glass-freak rounded-2xl p-4 mb-4 border border-white/5 bg-gradient-to-br from-white/5 to-transparent">
+                            <div className="flex items-center gap-3 mb-3">
                                 <div
-                                    className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
-                                    <span className="text-sm font-bold text-white">
-                                        <Avatar>
-                                            src={userProfile?.profilePictureUrl}
-                                            alt={`${userProfile?.firstName} ${userProfile?.lastName}`}
-                                        </Avatar>
-                                    </span>
+                                    className="w-10 h-10 rounded-full bg-gradient-to-tr from-secondary to-orange-400 p-[2px] shadow-glow-pink">
+                                    <div
+                                        className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                                        <Avatar
+                                            src={userProfile.profilePictureUrl}
+                                            name={`${userProfile.firstName} ${userProfile.lastName}`}
+                                            size="100%"
+                                            round={true}
+                                            textSizeRatio={2}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col">
+                                <span
+                                    className="text-sm font-bold text-slate-900 dark:text-white font-display">
+                                    {userProfile.firstName} {userProfile.lastName}
+                                </span>
+                                    <span
+                                        className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    {userProfile.role}
+                                </span>
                                 </div>
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-bold text-slate-900 dark:text-white font-display">{userProfile?.firstName} {userProfile?.lastName}</span>
-                                <span
-                                    className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">{userProfile?.role}</span>
-                            </div>
-                        </div>
 
-                        <button
-                            onClick={onLogout}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-red-500/20 text-slate-600 dark:text-slate-300 hover:text-red-500 transition-all text-xs font-bold uppercase tracking-wider"
-                        >
-                            <span className="material-icons-round text-sm">power_settings_new</span>
-                            Log Out
-                        </button>
-                    </div>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-red-500/20 text-slate-600 dark:text-slate-300 hover:text-red-500 transition-all text-xs font-bold uppercase tracking-wider"
+                            >
+                                <span className="material-icons-round text-sm">power_settings_new</span>
+                                Log Out
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </aside>

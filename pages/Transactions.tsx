@@ -266,10 +266,8 @@ const Transactions: React.FC = () => {
 
                                     <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                         <button
-                                            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-primary hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all">
-                                            <span className="material-icons-round text-lg">edit</span></button>
-                                        <button
                                             className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all">
+                                            {/* TODO:IMPLEMENT TRANSACTION DELETING */}
                                             <span className="material-icons-round text-lg">delete</span></button>
                                     </div>
                                 </div>

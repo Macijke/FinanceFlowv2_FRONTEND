@@ -1,14 +1,14 @@
 import React, {useEffect, useState} from 'react';
-import Modal from '../components/Modal';
 import {MonthlyTrends} from "@/components/dashboard/MonthlyTrends.tsx";
 import {SpendingChart} from "@/components/dashboard/SpendingChart.tsx";
 import {getApiUrl} from "@/config/api.ts";
 import {useCookies} from "react-cookie";
 import {RecentTransactions} from "@/components/dashboard/RecentTransactions.tsx";
+import {useUser} from "@/context/UserContext.tsx";
 
 const Dashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
-    const [userProfile, setUserProfile] = useState(null);
+    const {userProfile, logout: contextLogout} = useUser();
     const [summary, setSummary] = useState(null);
     const [cookies] = useCookies(["user"]);
     const [dateRange, setDateRange] = useState<string>('6months');
@@ -29,28 +29,11 @@ const Dashboard: React.FC = () => {
         }
     }
 
-    const getUserProfile = async () => {
-        try {
-            const response = await fetch(getApiUrl(`/users/profile`), {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${cookies.user}`,
-                },
-            });
-            const data = await response.json();
-            setUserProfile(data.data);
-        } catch (error) {
-            console.error("Error fetching profile:", error);
-        }
-    }
-
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             await Promise.all([
                 getDashboardSummary(),
-                getUserProfile()
             ]);
             setLoading(false);
         };

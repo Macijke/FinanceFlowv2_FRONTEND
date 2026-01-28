@@ -11,7 +11,6 @@ const Budgets: React.FC = () => {
     const [budgets, setBudgets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [currentMonth, setCurrentMonth] = useState(new Date());
     const [editingBudget, setEditingBudget] = useState(null);
 
     const fetchBudgets = async () => {
@@ -131,16 +130,10 @@ const Budgets: React.FC = () => {
 
                     <div className="flex gap-3 w-full sm:w-auto">
                         <button
-                            onClick={() => setIsEditLimitsOpen(true)}
-                            className="flex-1 sm:flex-none glass-freak text-slate-700 dark:text-slate-300 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-white/10"
-                        >
-                            <span className="material-icons-round text-sm">edit</span> Edit Limits
-                        </button>
-                        <button
                             onClick={() => setIsAddBudgetOpen(true)}
                             className="flex-1 sm:flex-none bg-primary hover:bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-soft flex items-center justify-center gap-2 transition-all hover:scale-105"
                         >
-                            <span className="material-icons-round text-sm">add</span> New Category
+                            <span className="material-icons-round text-sm">add</span> New Budget
                         </button>
                     </div>
                 </div>
@@ -227,17 +220,39 @@ const Budgets: React.FC = () => {
                                         <div>
                                             <h3 className="text-lg font-bold font-display text-slate-900 dark:text-white">{cat.categoryName}</h3>
                                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                    <span
-                                        className={percentage > 100 ? 'text-red-500 dark:text-red-400 font-bold' : ''}>
-                                        ${cat.spentAmount}
-                                    </span>
+                                                <span
+                                                    className={percentage > 100 ? 'text-red-500 dark:text-red-400 font-bold' : ''}>
+                                                    ${cat.spentAmount}
+                                                </span>
                                                 {' '} / ${cat.limitAmount}
                                             </p>
                                         </div>
                                     </div>
-                                    <div
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 ${percentage > 100 ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-300'}`}>
-                                        {percentage}%
+
+                                    <div className="flex flex-col items-end gap-2">
+                                        <div
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 ${percentage > 100 ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-300'}`}>
+                                            {percentage}%
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button
+                                                onClick={() => {
+                                                    setEditingBudget(cat);
+                                                    setIsEditLimitsOpen(true);
+                                                }}
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-primary transition-colors"
+                                                title="Edit Limit"
+                                            >
+                                                <span className="material-icons-round text-lg">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteBudget(cat.id)}
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors"
+                                                title="Delete Budget"
+                                            >
+                                                <span className="material-icons-round text-lg">delete</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -271,10 +286,21 @@ const Budgets: React.FC = () => {
             </div>
 
             {/* New Budget Modal */}
-            <BudgetsDialog onClick={() => setIsAddBudgetOpen(true)} isOpen={isAddBudgetOpen} onClose={() => setIsAddBudgetOpen(false)}/>
+            <BudgetsDialog
+                isOpen={isAddBudgetOpen}
+                onClose={() => setIsAddBudgetOpen(false)}
+                formattedDate={formattedDate}
+                onBudgetAdded={onBudgetAdded}
+            />
 
             {/* Edit Limits Modal */}
-            <BudgetsDialog isOpen={isAddBudgetOpen} onClose={() => setIsEditLimitsOpen(false)}/>
+            <BudgetsDialog
+                isOpen={isEditLimitsOpen}
+                onClose={() => setIsEditLimitsOpen(false)}
+                formattedDate={formattedDate}
+                onBudgetAdded={onBudgetAdded}
+                editBudget={editingBudget}
+            />
         </>
     );
 };

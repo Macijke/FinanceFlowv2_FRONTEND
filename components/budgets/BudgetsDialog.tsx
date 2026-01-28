@@ -1,4 +1,4 @@
-import Modal from "@/components/Modal.tsx";
+import Modal from "@/components/menu/Modal.tsx";
 import React, {useEffect, useState} from "react";
 import {useCookies} from "react-cookie";
 import {getApiUrl} from "@/config/api.ts";
@@ -24,7 +24,7 @@ interface Category {
     name: string;
 }
 
-const BudgetsDialog = ({isOpen, onClose, onBudgetAdded, formattedDate, editBudget, onClick}: BudgetsDialogProps) => {
+const BudgetsDialog = ({isOpen, onClose, onBudgetAdded, formattedDate, editBudget}: BudgetsDialogProps) => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);
     const [cookies] = useCookies(['user']);

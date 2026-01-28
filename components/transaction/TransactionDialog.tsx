@@ -1,4 +1,4 @@
-import Modal from "@/components/Modal.tsx";
+import Modal from "@/components/menu/Modal.tsx";
 import {useEffect, useState} from "react";
 import {useCookies} from "react-cookie";
 import {getApiUrl} from "@/config/api.ts";
