@@ -1,7 +1,9 @@
 import React, {useState} from 'react';
+import {useUser} from "@/context/UserContext.tsx";
 
 const Settings: React.FC = () => {
-    // Simple "form" state for categories (visual only for this demo)
+
+    const {userProfile, logout: contextLogout} = useUser();
     const [catName, setCatName] = useState('');
     const [catType, setCatType] = useState('expense');
     const [catColor, setCatColor] = useState('#3b82f6');
@@ -43,7 +45,8 @@ const Settings: React.FC = () => {
                                     Name</label>
                                 <input
                                     type="text"
-                                    defaultValue="Jan"
+                                    disabled={true}
+                                    defaultValue={userProfile?.firstName}
                                     className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none dark:text-white"
                                 />
                             </div>
@@ -52,7 +55,8 @@ const Settings: React.FC = () => {
                                     Name</label>
                                 <input
                                     type="text"
-                                    defaultValue="Kowalski"
+                                    disabled={true}
+                                    defaultValue={userProfile?.lastName}
                                     className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none dark:text-white"
                                 />
                             </div>
@@ -61,7 +65,8 @@ const Settings: React.FC = () => {
                                     Address</label>
                                 <input
                                     type="email"
-                                    defaultValue="jan.kowalski@example.com"
+                                    disabled={true}
+                                    defaultValue={userProfile?.email}
                                     className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none dark:text-white"
                                 />
                             </div>
@@ -70,6 +75,7 @@ const Settings: React.FC = () => {
 
                     <div className="bg-slate-50 dark:bg-slate-900/50 px-6 py-4 flex justify-end">
                         <button
+                            disabled={true}
                             className="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors shadow-sm">
                             Save Changes
                         </button>

@@ -7,6 +7,7 @@ interface UserProfile {
     lastName: string;
     role: string;
     profilePictureUrl?: string;
+    email: string;
 }
 
 interface UserContextType {
