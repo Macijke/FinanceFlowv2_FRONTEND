@@ -8,6 +8,7 @@ interface UserProfile {
     role: string;
     profilePictureUrl?: string;
     email: string;
+    defaultCurrency: string;
 }
 
 interface UserContextType {
