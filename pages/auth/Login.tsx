@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import {useCookies} from "react-cookie";
 import {getApiUrl} from "@/config/api.ts";
+import {useNotification} from "@/context/NotificationContext.tsx";
 
 interface LoginProps {
     onLogin: () => void;
@@ -10,6 +11,7 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({onLogin}) => {
     const navigate = useNavigate();
     const [cookies, setCookie] = useCookies(['user']);
+    const {showNotification} = useNotification();
     const [loading, setLoading] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -55,6 +57,7 @@ const Login: React.FC<LoginProps> = ({onLogin}) => {
                 });
                 onLogin();
                 navigate("/dashboard");
+                showNotification("Login Successful", "You have successfully logged in.", "success");
             } else {
                 setLoginError(data.message || "Invalid email or password");
             }

@@ -3,12 +3,14 @@ import {useCookies} from "react-cookie";
 import {getApiUrl} from "@/config/api.ts";
 import NewSavingGoalsDialog from "@/components/savingsgoal/NewSavingGoalsDialog.tsx";
 import ContributeSavingsGoalDialog from "@/components/savingsgoal/ContributeSavingsGoalDialog.tsx";
+import {useNotification} from "@/context/NotificationContext.tsx";
 
 const SavingsGoals: React.FC = () => {
     const [isContributionOpen, setIsContributionOpen] = useState(false);
     const [isNewGoalOpen, setIsNewGoalOpen] = useState(false);
     const [goals, setGoals] = useState([]);
     const [cookies] = useCookies(['user']);
+    const {showNotification} = useNotification();
     const [editingGoal, setEditingGoal] = useState<any>(null);
     const [contributingGoal, setContributingGoal] = useState<{ id: number, name: string } | null>(null);
 
@@ -33,6 +35,11 @@ const SavingsGoals: React.FC = () => {
         return {text: `${days} day${days > 1 ? 's' : ''} left`, color: 'text-orange-500', icon: 'schedule'};
     };
 
+    const sortedGoals = [...goals].sort((a: any, b: any) => {
+        const timeA = Date.parse(a.targetDate) - Date.now();
+        const timeB = Date.parse(b.targetDate) - Date.now();
+        return timeA - timeB;
+    });
 
     const fetchSavingsGoals = async () => {
         try {
@@ -61,11 +68,13 @@ const SavingsGoals: React.FC = () => {
     const onGoalAdded = () => {
         fetchSavingsGoals();
         setEditingGoal(null);
+        showNotification("Goal saved successfully", "Your savings goal has been created/updated.", "success");
     }
 
     const onContribution = () => {
         fetchSavingsGoals();
         setContributingGoal(null);
+        showNotification("Contribution added", "Your contribution has been added to the savings goal.", "success");
     }
 
     const handleEditGoal = (goal: any) => {
@@ -129,7 +138,7 @@ const SavingsGoals: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
 
-                {goals.map((goal: any, idx) => {
+                {sortedGoals.map((goal: any, idx) => {
                     const timeLeft = getTimeRemaining(goal.targetDate);
                     return (<div
                         key={idx}

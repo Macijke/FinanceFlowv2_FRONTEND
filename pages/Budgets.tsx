@@ -2,11 +2,12 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {useCookies} from "react-cookie";
 import {getApiUrl} from "@/config/api.ts";
 import BudgetsDialog from "@/components/budgets/BudgetsDialog.tsx";
+import {useNotification} from "@/context/NotificationContext.tsx";
 
 const Budgets: React.FC = () => {
     const [isAddBudgetOpen, setIsAddBudgetOpen] = useState(false);
     const [isEditLimitsOpen, setIsEditLimitsOpen] = useState(false);
-
+    const {showNotification} = useNotification();
     const [cookies] = useCookies(["user"]);
     const [budgets, setBudgets] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -42,6 +43,7 @@ const Budgets: React.FC = () => {
     const onBudgetAdded = () => {
         fetchBudgets();
         setEditingBudget(null);
+        showNotification("Budget saved", 'Your budget has been saved successfully.', 'success');
     };
 
     const handleDeleteBudget = async (budgetId: number) => {

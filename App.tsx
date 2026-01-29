@@ -13,6 +13,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import {CookiesProvider} from "react-cookie";
 import {UserProvider} from "@/context/UserContext.tsx";
+import {NotificationProvider, useNotification} from "@/context/NotificationContext.tsx";
 
 // Protected Layout Wrapper
 const ProtectedLayout: React.FC<{ children: React.ReactNode; onLogout: () => void }> = ({children, onLogout}) => {
@@ -102,56 +103,58 @@ const App: React.FC = () => {
 
     return (
         <CookiesProvider>
-            <UserProvider>
-                <HashRouter>
-                    <Routes>
-                        {/* Public Routes */}
-                        {!isAuthenticated ? (
-                            <>
-                                <Route path="/welcome" element={<Landing/>}/>
-                                <Route path="/login" element={<Login onLogin={handleLogin}/>}/>
-                                <Route path="/register" element={<Register onLogin={handleLogin}/>}/>
-                                <Route path="*" element={<Navigate to="/welcome" replace/>}/>
-                            </>
-                        ) : (
-                            /* Protected Routes */
-                            <>
-                                <Route path="/" element={
-                                    <ProtectedLayout onLogout={handleLogout}>
-                                        <Dashboard/>
-                                    </ProtectedLayout>
-                                }/>
-                                <Route path="/transactions" element={
-                                    <ProtectedLayout onLogout={handleLogout}>
-                                        <Transactions/>
-                                    </ProtectedLayout>
-                                }/>
-                                <Route path="/budgets" element={
-                                    <ProtectedLayout onLogout={handleLogout}>
-                                        <Budgets/>
-                                    </ProtectedLayout>
-                                }/>
-                                <Route path="/analytics" element={
-                                    <ProtectedLayout onLogout={handleLogout}>
-                                        <Analytics/>
-                                    </ProtectedLayout>
-                                }/>
-                                <Route path="/savings" element={
-                                    <ProtectedLayout onLogout={handleLogout}>
-                                        <SavingsGoals/>
-                                    </ProtectedLayout>
-                                }/>
-                                <Route path="/settings" element={
-                                    <ProtectedLayout onLogout={handleLogout}>
-                                        <Settings/>
-                                    </ProtectedLayout>
-                                }/>
-                                <Route path="*" element={<Navigate to="/" replace/>}/>
-                            </>
-                        )}
-                    </Routes>
-                </HashRouter>
-            </UserProvider>
+            <NotificationProvider>
+                <UserProvider>
+                    <HashRouter>
+                        <Routes>
+                            {/* Public Routes */}
+                            {!isAuthenticated ? (
+                                <>
+                                    <Route path="/welcome" element={<Landing/>}/>
+                                    <Route path="/login" element={<Login onLogin={handleLogin}/>}/>
+                                    <Route path="/register" element={<Register onLogin={handleLogin}/>}/>
+                                    <Route path="*" element={<Navigate to="/welcome" replace/>}/>
+                                </>
+                            ) : (
+                                /* Protected Routes */
+                                <>
+                                    <Route path="/" element={
+                                        <ProtectedLayout onLogout={handleLogout}>
+                                            <Dashboard/>
+                                        </ProtectedLayout>
+                                    }/>
+                                    <Route path="/transactions" element={
+                                        <ProtectedLayout onLogout={handleLogout}>
+                                            <Transactions/>
+                                        </ProtectedLayout>
+                                    }/>
+                                    <Route path="/budgets" element={
+                                        <ProtectedLayout onLogout={handleLogout}>
+                                            <Budgets/>
+                                        </ProtectedLayout>
+                                    }/>
+                                    <Route path="/analytics" element={
+                                        <ProtectedLayout onLogout={handleLogout}>
+                                            <Analytics/>
+                                        </ProtectedLayout>
+                                    }/>
+                                    <Route path="/savings" element={
+                                        <ProtectedLayout onLogout={handleLogout}>
+                                            <SavingsGoals/>
+                                        </ProtectedLayout>
+                                    }/>
+                                    <Route path="/settings" element={
+                                        <ProtectedLayout onLogout={handleLogout}>
+                                            <Settings/>
+                                        </ProtectedLayout>
+                                    }/>
+                                    <Route path="*" element={<Navigate to="/" replace/>}/>
+                                </>
+                            )}
+                        </Routes>
+                    </HashRouter>
+                </UserProvider>
+            </NotificationProvider>
         </CookiesProvider>
     );
 };

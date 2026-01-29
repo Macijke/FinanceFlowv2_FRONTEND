@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import Modal from "@/components/menu/Modal.tsx";
 import { getApiUrl } from "@/config/api.ts";
+import {useNotification} from "@/context/NotificationContext.tsx";
 
 interface EditGoal {
     id?: number;
@@ -22,6 +23,7 @@ interface IProps {
 
 const NewSavingGoalsDialog = ({ isOpen, onClose, onGoalAdded, editGoal }: IProps) => {
     const [cookies] = useCookies(['user']);
+    const {showNotification} = useNotification();
     const isEditMode = !!editGoal;
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -122,7 +124,7 @@ const NewSavingGoalsDialog = ({ isOpen, onClose, onGoalAdded, editGoal }: IProps
         e.preventDefault();
 
         if (!name || !targetAmount || !description) {
-            alert("Please fill in all required fields (Name, Amount, Description).");
+            showNotification('Incomplete Form',"Please fill in all required fields (Name, Amount, Description).", 'error');
             return;
         }
 
@@ -135,7 +137,7 @@ const NewSavingGoalsDialog = ({ isOpen, onClose, onGoalAdded, editGoal }: IProps
                 onGoalAdded();
             }
         } else {
-            alert(response?.message || "Error occurred. Please try again.");
+            showNotification('Error',`${response?.message || "An error occurred. Please try again."}`, 'error');
         }
     };
 

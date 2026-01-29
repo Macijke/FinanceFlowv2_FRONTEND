@@ -2,10 +2,12 @@ import React, {useEffect, useState} from 'react';
 import {useCookies} from "react-cookie";
 import {getApiUrl} from "@/config/api.ts";
 import {TransactionDialog} from "@/components/transaction/TransactionDialog.tsx";
+import { useNotification } from "@/context/NotificationContext";
 
 const Transactions: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [cookies] = useCookies(['user']);
+    const {showNotification} = useNotification();
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -90,6 +92,7 @@ const Transactions: React.FC = () => {
     const onTransactionAdded = () => {
         handleTransactions(currentPage, pageSize);
         setIsModalOpen(false);
+        showNotification("Transaction Added", "Your transaction has been added successfully.");
     };
 
     const resetFilters = () => {

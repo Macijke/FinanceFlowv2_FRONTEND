@@ -3,6 +3,7 @@ import {useState} from "react";
 import {useCookies} from "react-cookie";
 import {z} from "zod";
 import {getApiUrl} from "@/config/api.ts";
+import {useNotification} from "@/context/NotificationContext.tsx";
 
 const contributeSchema = z.object({
     amount: z
@@ -24,6 +25,7 @@ interface IProps {
 
 const ContributeSavingsGoalDialog = ({isOpen, onClose, onContribution, goalInfo}: IProps) => {
     const [cookies] = useCookies(['user']);
+    const {showNotification} = useNotification();
     const [amount, setAmount] = useState("");
     const [note, setNote] = useState("");
     const [loading, setLoading] = useState(false);
@@ -48,10 +50,10 @@ const ContributeSavingsGoalDialog = ({isOpen, onClose, onContribution, goalInfo}
         } catch (err) {
             if (err instanceof z.ZodError) {
                 const fieldErrors: { amount?: string; note?: string } = {};
-                // err.errors.forEach((error) => {
-                //     const field = error.path[0] as "amount" | "note";
-                //     fieldErrors[field] = error.message;
-                // });
+                err.issues.forEach((error) => {
+                    const field = error.path[0] as "amount" | "note";
+                    fieldErrors[field] = error.message;
+                });
                 setErrors(fieldErrors);
             }
             return false;
@@ -62,7 +64,7 @@ const ContributeSavingsGoalDialog = ({isOpen, onClose, onContribution, goalInfo}
         e.preventDefault();
 
         if (!goalInfo?.id) {
-            alert("Goal information is missing");
+            showNotification("Goal information is missing", 'Unable to contribute without goal information.', 'error');
             return;
         }
 
@@ -87,16 +89,16 @@ const ContributeSavingsGoalDialog = ({isOpen, onClose, onContribution, goalInfo}
             const resJson = await response.json();
 
             if (response.ok && !resJson.error) {
-                //alert(`✅ Successfully added $${amount} to "${goalInfo.name}"!`);
+                showNotification(`Contribution succeed!`,`✅ Successfully added $${amount} to "${goalInfo.name}"!`);
                 resetForm();
                 onClose();
                 onContribution();
             } else {
-                //alert(`❌ Error: ${resJson?.message || "Could not contribute to the goal. Please try again."}`);
+                showNotification('Contribution failed',`${resJson?.message || "Could not contribute to the goal. Please try again."}`, 'error');
             }
         } catch (err) {
             console.error(err);
-            //alert("❌ Network Error: An error occurred while trying to contribute. Please try again later.");
+            showNotification('Network Error',"An error occurred while trying to contribute. Please try again later.", 'error');
         } finally {
             setLoading(false);
         }

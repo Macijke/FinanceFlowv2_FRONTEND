@@ -3,6 +3,7 @@ import {useUser} from "@/context/UserContext.tsx";
 import {useCookies} from "react-cookie";
 import {getApiUrl} from "@/config/api.ts";
 import {z} from "zod";
+import {useNotification} from "@/context/NotificationContext.tsx";
 
 interface Category {
     id: number;
@@ -35,6 +36,7 @@ const categorySchema = z.object({
 const Settings: React.FC = () => {
     const {userProfile, refreshProfile} = useUser();
     const [cookies] = useCookies(['user']);
+    const {showNotification} = useNotification();
 
     const [profilePictureUrl, setProfilePictureUrl] = useState('');
     const [profileLoading, setProfileLoading] = useState(false);
@@ -46,7 +48,6 @@ const Settings: React.FC = () => {
         confirmPassword: '',
     });
     const [passwordLoading, setPasswordLoading] = useState(false);
-    const [passwordMessage, setPasswordMessage] = useState<{success?: string, error?: string}>({});
 
     const [catName, setCatName] = useState('');
     const [catType, setCatType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
@@ -54,7 +55,6 @@ const Settings: React.FC = () => {
     const [catEmoji, setCatEmoji] = useState('🏠');
     const [categories, setCategories] = useState<Category[]>([]);
     const [categoryLoading, setCategoryLoading] = useState(false);
-    const [categoryMessage, setCategoryMessage] = useState<{success?: string, error?: string}>({});
 
     const presetColors = ['#3b82f6', '#10b981', '#ef4444', '#a855f7', '#f97316', '#ec4899'];
 
@@ -113,15 +113,14 @@ const Settings: React.FC = () => {
             const data = await response.json();
 
             if (response.ok && !data.error) {
-                setProfileMessage({ success: '✓ Profile picture updated successfully!' });
+                showNotification('Profile picture updated', 'Your profile picture has been updated successfully.');
                 refreshProfile();
-                setTimeout(() => setProfileMessage({}), 3000);
             } else {
-                setProfileMessage({ error: data.message || 'Failed to update profile picture' });
+                showNotification('Error '+ data.message || 'Failed to update profile picture', 'error');
             }
         } catch (err) {
             console.error(err);
-            setProfileMessage({ error: 'Network error occurred' });
+            showNotification('Error fetching profile picture', 'Network error occurred');
         } finally {
             setProfileLoading(false);
         }
@@ -138,13 +137,12 @@ const Settings: React.FC = () => {
 
     const handlePasswordChange = async (e: React.FormEvent) => {
         e.preventDefault();
-        setPasswordMessage({});
 
         try {
             passwordSchema.parse(passwords);
         } catch (err) {
             if (err instanceof z.ZodError) {
-                setPasswordMessage({ error: err.issues[0].message });
+                showNotification('Error changing password', err.issues[0].message);
                 return;
             }
         }
@@ -167,27 +165,24 @@ const Settings: React.FC = () => {
             const data = await response.json();
 
             if (response.ok && !data.error) {
-                setPasswordMessage({ success: '✓ Password changed successfully!' });
+                showNotification('Password changed', 'Your password has been changed successfully.');
                 setPasswords({
                     currentPassword: '',
                     newPassword: '',
                     confirmPassword: '',
                 });
-                setTimeout(() => setPasswordMessage({}), 3000);
             } else {
-                setPasswordMessage({ error: data.message || 'Failed to change password' });
+                showNotification('Error changing password', data.message || 'Failed to change password', 'error');
             }
         } catch (err) {
             console.error(err);
-            setPasswordMessage({ error: 'Network error occurred' });
+            showNotification('Error changing password', 'Network error occurred', 'error');
         } finally {
             setPasswordLoading(false);
         }
     };
 
     const handleAddCategory = async () => {
-        setCategoryMessage({});
-
         try {
             categorySchema.parse({
                 name: catName,
@@ -197,7 +192,7 @@ const Settings: React.FC = () => {
             });
         } catch (err) {
             if (err instanceof z.ZodError) {
-                setCategoryMessage({ error: err.issues[0].message });
+                showNotification('Error adding category', 'Failed to add category', 'error');
                 return;
             }
         }
@@ -221,19 +216,18 @@ const Settings: React.FC = () => {
             const data = await response.json();
 
             if (response.ok && !data.error) {
-                setCategoryMessage({ success: '✓ Category added successfully!' });
+                showNotification('Category added', 'New category has been added successfully.');
                 setCatName('');
                 setCatEmoji('🏠');
                 setCatColor('#3b82f6');
                 setCatType('EXPENSE');
                 fetchCategories();
-                setTimeout(() => setCategoryMessage({}), 3000);
             } else {
-                setCategoryMessage({ error: data.message || 'Failed to add category' });
+                showNotification('Error adding category', data.message || 'Failed to add category', 'error');
             }
         } catch (err) {
             console.error(err);
-            setCategoryMessage({ error: 'Network error occurred' });
+            showNotification('Error adding category', 'Network error occurred', 'error');
         } finally {
             setCategoryLoading(false);
         }
@@ -254,11 +248,11 @@ const Settings: React.FC = () => {
                 fetchCategories();
             } else {
                 const data = await response.json();
-                alert(data.message || 'Failed to delete category');
+                showNotification(data.message, 'Failed to delete category');
             }
         } catch (err) {
             console.error(err);
-            alert('Network error occurred');
+            showNotification('Network error', 'Failed to delete category');
         }
     };
 
@@ -483,18 +477,6 @@ const Settings: React.FC = () => {
                                 </div>
                             </div>
 
-                            {categoryMessage.error && (
-                                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                                    <p className="text-sm text-red-600 dark:text-red-400">{categoryMessage.error}</p>
-                                </div>
-                            )}
-
-                            {categoryMessage.success && (
-                                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                    <p className="text-sm text-green-600 dark:text-green-400">{categoryMessage.success}</p>
-                                </div>
-                            )}
-
                             <button
                                 type="button"
                                 onClick={handleAddCategory}
@@ -653,18 +635,6 @@ const Settings: React.FC = () => {
                                     className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary outline-none dark:text-white disabled:opacity-50"
                                 />
                             </div>
-
-                            {passwordMessage.error && (
-                                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                                    <p className="text-sm text-red-600 dark:text-red-400">{passwordMessage.error}</p>
-                                </div>
-                            )}
-
-                            {passwordMessage.success && (
-                                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                    <p className="text-sm text-green-600 dark:text-green-400">{passwordMessage.success}</p>
-                                </div>
-                            )}
 
                             <button
                                 type="submit"
